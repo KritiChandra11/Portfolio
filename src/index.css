@@ -106,11 +106,15 @@ body {
 .techstack {
   width: 100%;
   position: relative;
-  overflow: clip;
+  overflow: hidden;
   height: var(--vh);
   margin: auto;
   margin-top: 50px;
   margin-bottom: -100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .techstack h2 {
@@ -118,10 +122,38 @@ body {
   text-align: center;
   position: absolute;
   width: 100%;
-  top: 120px;
+  top: 40px;
   left: 0;
   font-weight: 400;
   text-transform: uppercase;
+  z-index: 5;
+  letter-spacing: -2px;
+}
+
+.tech-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 8;
+  pointer-events: auto;
+}
+
+.techstack-info {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #666;
+  text-transform: uppercase;
+  z-index: 10;
+  pointer-events: none;
+  transition: color 0.3s ease;
+}
+
+.techstack:hover .techstack-info {
+  color: #888;
 }
 
 @media screen and (min-width: 768px) {
@@ -132,6 +164,12 @@ body {
 
 @media screen and (max-width: 900px) {
   .techstack h2 {
-    font-size: 40px;
+    font-size: 50px;
+    top: 20px;
+  }
+
+  .techstack-info {
+    font-size: 11px;
+    bottom: 30px;
   }
 }

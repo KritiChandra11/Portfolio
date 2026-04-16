@@ -5,32 +5,25 @@ import { MdArrowBack, MdArrowForward } from "react-icons/md";
 
 const projects = [
   {
-    title: "CallHQ",
-    category: "Voice AI Calling Platform",
-    tools: "Voice AI, Calling Automation, CRM Integrations",
-    image: "/images/callhq.png",
-    link: "https://callhq.ai",
+    title: "AI Placement Interview Trainer (RAG-Based)",
+    category: "Full-stack RAG-based GenAI Application",
+    tools: "Python, FastAPI, React.js, SentenceTransformers, FAISS, OpenAI API, Docker",
+    image: "/images/RAG BOT.png",
+    link: "https://github.com/kriti_chandra",
   },
   {
-    title: "Whatsapp Automation",
-    category: "WABA Application",
-    tools: "WhatsApp Business API, Workflow Automation, Notifications",
-    image: "/images/whatsapp.png",
-    link: "https://whatsapp.callhq.ai",
+    title: "Time Shift Web Analyzer",
+    category: "Website Evolution Tracking System",
+    tools: "Go, Redis, JavaScript, Chart.js, REST APIs, Docker",
+    image: "/images/WEB-ARCHIVAL.png",
+    link: "https://github.com/kriti_chandra",
   },
   {
-    title: "Broki",
-    category: "Real Estate Platform for FnB Industry",
-    tools: "Property Discovery, Lead Management, Marketplace Workflows",
-    image: "/images/broki.png",
-    link: "https://broki.in",
-  },
-  {
-    title: "Orrdr.com",
-    category: "Ecommerce Platform and Mobile App",
-    tools: "Ecommerce, Mobile Experience, Order Management",
-    image: "/images/orrdr.png",
-    link: "https://orrdr.com",
+    title: "Distributed Transaction Orchestrator (SAGA)",
+    category: "Microservices-based Order Processing Platform",
+    tools: "Java 21, Spring Boot 3.2.5, Apache Kafka, Kafka Streams, Docker, H2 Database",
+    image: "/images/Screenshot 2026-04-16 213500.png",
+    link: "https://github.com/kriti_chandra",
   },
 ];
 

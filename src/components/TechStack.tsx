@@ -1,212 +1,238 @@
 import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment } from "@react-three/drei";
+import { Environment, Text, Billboard } from "@react-three/drei";
 import { EffectComposer, N8AO } from "@react-three/postprocessing";
 import {
   BallCollider,
   Physics,
   RigidBody,
-  CylinderCollider,
   RapierRigidBody,
 } from "@react-three/rapier";
 
-const textureLoader = new THREE.TextureLoader();
-const imageUrls = [
-  "/images/react2.webp",
-  "/images/next2.webp",
-  "/images/node2.webp",
-  "/images/express.webp",
-  "/images/mongo.webp",
-  "/images/mysql.webp",
-  "/images/typescript.webp",
-  "/images/javascript.webp",
+// Curated skills (16 total)
+const skillsData = [
+  // Backend & Systems (5)
+  { name: "Kafka", category: "Backend", position: [-6, 6, 0] },
+  { name: "Microservices", category: "Backend", position: [-2, 8, 0] },
+  { name: "SAGA", category: "Backend", position: [2, 8, 0] },
+  { name: "REST APIs", category: "Backend", position: [6, 6, 0] },
+  { name: "Distributed Sys", category: "Backend", position: [8, 0, 0] },
+
+  // AI / ML (4)
+  { name: "RAG", category: "AI/ML", position: [-6, -6, 0] },
+  { name: "LLM Integration", category: "AI/ML", position: [-2, -8, 0] },
+  { name: "FAISS", category: "AI/ML", position: [2, -8, 0] },
+  { name: "OpenAI APIs", category: "AI/ML", position: [6, -6, 0] },
+
+  // Frameworks (3)
+  { name: "Spring Boot", category: "Frameworks", position: [-4, 0, 0] },
+  { name: "React.js", category: "Frameworks", position: [0, -3, 0] },
+  { name: "FastAPI", category: "Frameworks", position: [4, 0, 0] },
+
+  // DevOps (2)
+  { name: "Docker", category: "DevOps", position: [-3, 3, 0] },
+  { name: "CI/CD", category: "DevOps", position: [3, 3, 0] },
+
+  // Languages (2)
+  { name: "Python", category: "Languages", position: [-2, -2, 0] },
+  { name: "Java", category: "Languages", position: [2, -2, 0] },
 ];
-const textures = imageUrls.map((url) => textureLoader.load(url));
 
-const sphereGeometry = new THREE.SphereGeometry(1, 28, 28);
-
-const spheres = [...Array(30)].map(() => ({
-  scale: [0.7, 1, 0.8, 1, 1][Math.floor(Math.random() * 5)],
-}));
-
-type SphereProps = {
-  vec?: THREE.Vector3;
-  scale: number;
-  r?: typeof THREE.MathUtils.randFloatSpread;
-  material: THREE.MeshPhysicalMaterial;
-  isActive: boolean;
+type SkillBallProps = {
+  skill: (typeof skillsData)[0];
+  index: number;
+  isHovered: boolean;
+  isHoverState: boolean;
 };
 
-function SphereGeo({
-  vec = new THREE.Vector3(),
-  scale,
-  r = THREE.MathUtils.randFloatSpread,
-  material,
-  isActive,
-}: SphereProps) {
-  const api = useRef<RapierRigidBody | null>(null);
+function SkillBall({ skill, index, isHovered, isHoverState }: SkillBallProps) {
+  const ref = useRef<RapierRigidBody>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const textRef = useRef<THREE.Mesh>(null);
+  const [scale, setScale] = useState(1);
+
+  // Random idle positions for initial state
+  const idlePosition = useMemo(() => {
+    const angle = (index / skillsData.length) * Math.PI * 2;
+    const radius = 12 + Math.sin(index) * 2;
+    return [
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius + Math.sin(index * 0.7) * 2,
+      Math.cos(index * 0.3) * 3,
+    ] as [number, number, number];
+  }, [index]);
 
   useFrame((_state, delta) => {
-    if (!isActive) return;
-    delta = Math.min(0.1, delta);
-    const impulse = vec
-      .copy(api.current!.translation())
-      .normalize()
-      .multiply(
-        new THREE.Vector3(
-          -50 * delta * scale,
-          -150 * delta * scale,
-          -50 * delta * scale
-        )
-      );
+    if (!ref.current || !meshRef.current) return;
 
-    api.current?.applyImpulse(impulse, true);
+    const currentPos = ref.current.translation();
+
+    // Target position based on state
+    const targetPos = isHoverState ? skill.position : idlePosition;
+
+    // Smooth lerp movement
+    const speed = isHoverState ? 0.15 : 0.08;
+    const newPos = {
+      x: currentPos.x + (targetPos[0] - currentPos.x) * speed,
+      y: currentPos.y + (targetPos[1] - currentPos.y) * speed,
+      z: currentPos.z + (targetPos[2] - currentPos.z) * speed,
+    };
+    ref.current.setTranslation(newPos, true);
+
+    // Idle rotation - very subtle
+    if (!isHoverState) {
+      meshRef.current.rotation.x += delta * 0.15;
+      meshRef.current.rotation.y += delta * 0.1;
+    }
+
+    // Hover scale effect - subtle
+    const targetScale = isHovered ? 1.15 : 1;
+    setScale((prev) => prev + (targetScale - prev) * 0.12);
+    meshRef.current.scale.set(scale, scale, scale);
   });
 
-  return (
-    <RigidBody
-      linearDamping={0.75}
-      angularDamping={0.15}
-      friction={0.2}
-      position={[r(20), r(20) - 25, r(20) - 10]}
-      ref={api}
-      colliders={false}
-    >
-      <BallCollider args={[scale]} />
-      <CylinderCollider
-        rotation={[Math.PI / 2, 0, 0]}
-        position={[0, 0, 1.2 * scale]}
-        args={[0.15 * scale, 0.275 * scale]}
-      />
-      <mesh
-        castShadow
-        receiveShadow
-        scale={scale}
-        geometry={sphereGeometry}
-        material={material}
-        rotation={[0.3, 1, 1]}
-      />
-    </RigidBody>
+  const material = useMemo(
+    () =>
+      new THREE.MeshPhysicalMaterial({
+        color: "#f5f5f5",
+        emissive: "#ffffff",
+        emissiveIntensity: isHovered ? 0.4 : 0.15,
+        metalness: 0.15,
+        roughness: 0.3,
+        clearcoat: 0.5,
+        clearcoatRoughness: 0.2,
+        transparent: true,
+        opacity: 0.95,
+        ior: 1.5,
+      }),
+    [isHovered]
   );
-}
-
-type PointerProps = {
-  vec?: THREE.Vector3;
-  isActive: boolean;
-};
-
-function Pointer({ vec = new THREE.Vector3(), isActive }: PointerProps) {
-  const ref = useRef<RapierRigidBody>(null);
-
-  useFrame(({ pointer, viewport }) => {
-    if (!isActive) return;
-    const targetVec = vec.lerp(
-      new THREE.Vector3(
-        (pointer.x * viewport.width) / 2,
-        (pointer.y * viewport.height) / 2,
-        0
-      ),
-      0.2
-    );
-    ref.current?.setNextKinematicTranslation(targetVec);
-  });
 
   return (
     <RigidBody
-      position={[100, 100, 100]}
-      type="kinematicPosition"
-      colliders={false}
+      position={idlePosition}
       ref={ref}
+      colliders={false}
+      type="dynamic"
+      linearDamping={1.5}
+      angularDamping={1.5}
     >
-      <BallCollider args={[2]} />
+      <BallCollider args={[0.75]} />
+      <mesh
+        ref={meshRef}
+        geometry={new THREE.SphereGeometry(0.75, 32, 32)}
+        material={material}
+      >
+        <Billboard>
+          <Text
+            ref={textRef}
+            position={[0, 0, 0.85]}
+            fontSize={0.28}
+            color="#1a1a1a"
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={1.6}
+            textAlign="center"
+            fontWeight="bold"
+            letterSpacing={-0.01}
+          >
+            {skill.name}
+          </Text>
+        </Billboard>
+      </mesh>
     </RigidBody>
   );
 }
 
 const TechStack = () => {
-  const [isActive, setIsActive] = useState(false);
+  const [isHoverState, setIsHoverState] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY || document.documentElement.scrollTop;
-      const threshold = document
-        .getElementById("work")!
-        .getBoundingClientRect().top;
-      setIsActive(scrollY > threshold);
+    const handleMouseEnter = () => setIsHoverState(true);
+    const handleMouseLeave = () => {
+      setIsHoverState(false);
+      setHoveredIndex(null);
     };
-    document.querySelectorAll(".header a").forEach((elem) => {
-      const element = elem as HTMLAnchorElement;
-      element.addEventListener("click", () => {
-        const interval = setInterval(() => {
-          handleScroll();
-        }, 10);
-        setTimeout(() => {
-          clearInterval(interval);
-        }, 1000);
-      });
-    });
-    window.addEventListener("scroll", handleScroll);
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener("mouseenter", handleMouseEnter);
+    container.addEventListener("mouseleave", handleMouseLeave);
+
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      container.removeEventListener("mouseenter", handleMouseEnter);
+      container.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, []);
-  const materials = useMemo(() => {
-    return textures.map(
-      (texture) =>
-        new THREE.MeshPhysicalMaterial({
-          map: texture,
-          emissive: "#ffffff",
-          emissiveMap: texture,
-          emissiveIntensity: 0.3,
-          metalness: 0.5,
-          roughness: 1,
-          clearcoat: 0.1,
-        })
-    );
   }, []);
 
   return (
-    <div className="techstack">
-      <h2> My Techstack</h2>
+    <div className="techstack" id="techstack-section" ref={containerRef}>
+      <h2>My Techstack</h2>
 
       <Canvas
         shadows
         gl={{ alpha: true, stencil: false, depth: false, antialias: false }}
-        camera={{ position: [0, 0, 20], fov: 32.5, near: 1, far: 100 }}
-        onCreated={(state) => (state.gl.toneMappingExposure = 1.5)}
+        camera={{ position: [0, 0, 25], fov: 50, near: 0.1, far: 100 }}
+        onCreated={(state) => (state.gl.toneMappingExposure = 1.2)}
         className="tech-canvas"
       >
-        <ambientLight intensity={1} />
-        <spotLight
-          position={[20, 20, 25]}
-          penumbra={1}
-          angle={0.2}
-          color="white"
+        {/* Ambient light - soft base illumination */}
+        <ambientLight intensity={0.5} color="#ffffff" />
+
+        {/* Main directional light */}
+        <directionalLight
+          position={[15, 15, 20]}
+          intensity={0.8}
+          color="#ffffff"
           castShadow
           shadow-mapSize={[512, 512]}
         />
-        <directionalLight position={[0, 5, -4]} intensity={2} />
+
+        {/* Fill light */}
+        <directionalLight
+          position={[-15, -15, 10]}
+          intensity={0.4}
+          color="#e0e8ff"
+        />
+
+        {/* Subtle accent lights for depth */}
+        <pointLight position={[20, 10, 15]} intensity={0.25} color="#ffffff" />
+        <pointLight position={[-20, -10, 15]} intensity={0.2} color="#f0f4ff" />
+
         <Physics gravity={[0, 0, 0]}>
-          <Pointer isActive={isActive} />
-          {spheres.map((props, i) => (
-            <SphereGeo
-              key={i}
-              {...props}
-              material={materials[Math.floor(Math.random() * materials.length)]}
-              isActive={isActive}
-            />
+          {skillsData.map((skill, idx) => (
+            <group
+              key={idx}
+              onPointerEnter={() => setHoveredIndex(idx)}
+              onPointerLeave={() => setHoveredIndex(null)}
+            >
+              <SkillBall
+                skill={skill}
+                index={idx}
+                isHovered={hoveredIndex === idx}
+                isHoverState={isHoverState}
+              />
+            </group>
           ))}
         </Physics>
+
         <Environment
           files="/models/char_enviorment.hdr"
-          environmentIntensity={0.5}
+          environmentIntensity={0.2}
           environmentRotation={[0, 4, 2]}
         />
         <EffectComposer enableNormalPass={false}>
-          <N8AO color="#0f002c" aoRadius={2} intensity={1.15} />
+          <N8AO color="#0f002c" aoRadius={1.2} intensity={0.5} />
         </EffectComposer>
       </Canvas>
+
+      <div className="techstack-info">
+        <p>Hover to organize skills</p>
+      </div>
     </div>
   );
 };
